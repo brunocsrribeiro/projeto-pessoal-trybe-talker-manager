@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs/promises');
+const { generatedToken, validatedEmail, validatedPassword } = require('./authMiddleware');
 
 const app = express();
 app.use(bodyParser.json());
@@ -8,27 +9,41 @@ app.use(bodyParser.json());
 const HTTP_OK_STATUS = 200;
 const PORT = '3000';
 
-const talkerJSON = './talker.json';
-const encoding = 'utf-8';
+const TALKER_JSON = './talker.json';
+const STANDARD_UNICODE = 'utf-8';
 
-app.get('/talker', async (_req, res) => {
-  const talkerFS = await fs.readFile(talkerJSON, encoding)
+app.get('/talker', async (_request, response) => {
+  const talkerFS = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
     .then((fileName) => JSON.parse(fileName))
-    .catch((err) => res.status(200).json(err));
-  res.status(200).json(talkerFS);
+    .catch((err) => response.status(200).json(err));
+  response.status(200).json(talkerFS);
 });
 
-app.get('/talker/:id', async (req, res) => {
-  const { id } = req.params;
+app.get('/talker/:id', async (request, response) => {
+  const { id } = request.params;
 
-  const talkerID = await fs.readFile(talkerJSON, encoding)
+  const talkerID = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
     .then((fileContent) => JSON.parse(fileContent));
 
   const talker = talkerID.find((talk) => talk.id === +id); 
 
-  if (!talker) return res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
+  if (!talker) return response.status(404).json({ message: 'Pessoa palestrante não encontrada' });
 
-  res.status(200).json(talker);
+  response.status(200).json(talker);
+});
+
+app.post('/login', (request, response) => {
+  const { email, password } = request.body;
+  const token = generatedToken();
+
+  const validEmail = validatedEmail(email);
+  const validPassword = validatedPassword(password);
+  
+  if (validEmail) response.status(400).json({ message: validEmail });
+
+  if (validPassword) response.status(400).json({ message: validPassword });
+
+  response.status(200).json({ token });
 });
 
 // não remova esse endpoint, e para o avaliador funcionar
