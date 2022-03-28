@@ -15,6 +15,7 @@ const PORT = '3000';
 const TALKER_JSON = './talker.json';
 const STANDARD_UNICODE = 'utf-8';
 
+// Requisito 1
 app.get('/talker', async (_req, res) => {
   const talkerFS = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
     .then((fileName) => JSON.parse(fileName))
@@ -22,6 +23,23 @@ app.get('/talker', async (_req, res) => {
   res.status(200).json(talkerFS);
 });
 
+// Requisito 7
+app.get('/talker/search', isValidToken, async (req, res) => {
+  const { q } = req.query;
+
+  const talkers = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
+    .then((fileName) => JSON.parse(fileName));
+  
+  const getTalker = talkers.filter((talker) => talker.name.includes(q));
+
+  if (!getTalker) {
+    return res.status(200).json(talkers);
+  }
+
+  return res.status(200).json(getTalker);
+});
+
+// Requisito 2
 app.get('/talker/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -35,6 +53,7 @@ app.get('/talker/:id', async (req, res) => {
   res.status(200).json(talker);
 });
 
+// Requisito 3
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const token = generatedToken();
@@ -51,6 +70,7 @@ app.post('/login', (req, res) => {
 
 app.use(isValidToken);
 
+// Requisito 6
 app.delete('/talker/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -64,11 +84,12 @@ app.delete('/talker/:id', async (req, res) => {
   return res.status(204).end();
 });
 
+app.use(isValidAge);
+app.use(isValidName);
 app.use(isValidTalk);
 app.use(isValidDateAndRate);
-app.use(isValidName);
-app.use(isValidAge);
 
+// Requisito 4
 app.post('/talker', async (req, res) => {
   const { name, age, talk: { watchedAt, rate } } = req.body;
   
@@ -84,6 +105,7 @@ app.post('/talker', async (req, res) => {
   return res.status(201).json(newTalker);
 });
 
+// Requisito 5
 app.put('/talker/:id', async (req, res) => {
   const { name, age, talk: { watchedAt, rate } } = req.body;
   const { id } = req.params;
