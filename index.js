@@ -50,6 +50,20 @@ app.post('/login', (req, res) => {
 });
 
 app.use(isValidToken);
+
+app.delete('/talker/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const talkers = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
+    .then((fileName) => JSON.parse(fileName));
+
+  const newTalkers = talkers.filter((talker) => talker.id !== +id);
+
+  await fs.writeFile(TALKER_JSON, JSON.stringify(newTalkers));
+
+  return res.status(204).end();
+});
+
 app.use(isValidTalk);
 app.use(isValidDateAndRate);
 app.use(isValidName);
@@ -85,17 +99,6 @@ app.put('/talker/:id', async (req, res) => {
   await fs.writeFile(TALKER_JSON, JSON.stringify(talkers));
 
   return res.status(200).json(talkers[getTalker]);
-});
-
-app.delete('/talker/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const talkers = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
-    .then((fileName) => JSON.parse(fileName));
-
-  talkers.filter((talker) => talker.id !== +id);
-
-  return res.status(204).end();
 });
 
 // não remova esse endpoint, e para o avaliador funcionar
