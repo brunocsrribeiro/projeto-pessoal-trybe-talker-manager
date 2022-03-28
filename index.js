@@ -50,28 +50,53 @@ app.post('/login', (req, res) => {
 });
 
 app.use(isValidToken);
+app.use(isValidTalk);
+app.use(isValidDateAndRate);
+app.use(isValidName);
+app.use(isValidAge);
 
-app.post(
-  '/talker',
-  isValidTalk,
-  isValidDateAndRate,
-  isValidName,
-  isValidAge,
-  async (req, res) => {
+app.post('/talker', async (req, res) => {
   const { name, age, talk: { watchedAt, rate } } = req.body;
   
-  const talker = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
+  const talkers = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
     .then((fileName) => JSON.parse(fileName));
 
-  const newTalker = { name, age, id: talker.length + 1, talk: { watchedAt, rate } };
+  const newTalker = { name, age, id: talkers.length + 1, talk: { watchedAt, rate } };
 
-  talker.push(newTalker);
+  talkers.push(newTalker);
 
-  await fs.writeFile(TALKER_JSON, JSON.stringify(talker));
+  await fs.writeFile(TALKER_JSON, JSON.stringify(talkers));
 
   return res.status(201).json(newTalker);
-},
-);
+});
+
+app.put('/talker/:id', async (req, res) => {
+  const { name, age, talk: { watchedAt, rate } } = req.body;
+  const { id } = req.params;
+  const updateTalker = { id: +id, name, age, talk: { watchedAt, rate } };
+
+  const talkers = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
+    .then((fileName) => JSON.parse(fileName));
+
+  const getTalker = talkers.findIndex((talker) => talker.id === +id);
+  
+  talkers[getTalker] = { ...talkers[getTalker], ...updateTalker };
+
+  await fs.writeFile(TALKER_JSON, JSON.stringify(talkers));
+
+  return res.status(200).json(talkers[getTalker]);
+});
+
+app.delete('/talker/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const talkers = await fs.readFile(TALKER_JSON, STANDARD_UNICODE)
+    .then((fileName) => JSON.parse(fileName));
+
+  talkers.filter((talker) => talker.id !== +id);
+
+  return res.status(204).end();
+});
 
 // não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
